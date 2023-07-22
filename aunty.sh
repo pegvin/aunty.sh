@@ -55,7 +55,7 @@ if [[ $VIDEO_STREAM == "tty" ]] && [ "$EUID" -ne 0 ]; then
 fi
 
 if   [[ $CMD == "record"  ]]; then
-	FILENAME=$(date +"%Y-%m-%d-%H-%M-%S").mkv
+	FILENAME=Recording-$(date +"%Y-%m-%d-%H-%M-%S").mkv
 	mkdir -p $RECORDINGS
 	if [[ $VIDEO_STREAM == "x11" ]]; then
 		read -r S_X S_Y S_W S_H <<< $(slop -f "%x %y %w %h")
@@ -65,17 +65,18 @@ if   [[ $CMD == "record"  ]]; then
 	fi
 	ffmpeg                                       \
 		-hide_banner                             \
-		-framerate 30                            \
 		$FF_FLAGS                                \
 		-ss $(date -d@$START_DELAY -u +%H:%M:%S) \
 		-c:v libx264rgb                          \
 		-crf 0                                   \
 		-preset ultrafast                        \
 		-color_range 2                           \
-		$RECORDINGS/$FILENAME > /dev/null 2>&1
-	notify-send "Recorded $S_X,$S_Y $S_Wx$S_H $FILENAME"
+		-framerate 30                            \
+		-update 1                                \
+		$RECORDINGS/$FILENAME
+	echo "Recorded $S_X,$S_Y $S_Wx$S_H $FILENAME"
 elif [[ $CMD == "capture" ]]; then
-	FILENAME=$(date +"%Y-%m-%d-%H-%M-%S").png
+	FILENAME=Screenshot-$(date +"%Y-%m-%d-%H-%M-%S").png
 	mkdir -p $CAPTURES
 	if [[ $VIDEO_STREAM == "x11" ]]; then
 		read -r S_X S_Y S_W S_H <<< $(slop -f "%x %y %w %h")
@@ -85,15 +86,14 @@ elif [[ $CMD == "capture" ]]; then
 	fi
 	ffmpeg                                       \
 		-hide_banner                             \
-		-framerate 1                             \
 		$FF_FLAGS                                \
 		-ss $(date -d@$START_DELAY -u +%H:%M:%S) \
-		-frames:v 1                              \
-		-crf 0                                   \
-		-preset ultrafast                        \
 		-color_range 2                           \
-		$CAPTURES/$FILENAME > /dev/null 2>&1
-	notify-send -i $CAPTURES/screenshot-$FILENAME "Captured $S_X,$S_Y $S_Wx$S_H $FILENAME"
+		-frames:v 1                              \
+		-framerate 1                             \
+		-update 1                                \
+		$CAPTURES/$FILENAME
+	echo "Captured $S_X,$S_Y $S_Wx$S_H $FILENAME"
 else
 	PrintUsage
 	exit 1
