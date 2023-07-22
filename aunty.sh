@@ -2,6 +2,14 @@
 
 set -e
 
+if ! command ffmpeg -version &> /dev/null; then
+	echo "error 'ffmpeg' not found, but $0 depends on it."
+	exit 1
+elif ! command slop --version &> /dev/null; then
+	echo "error 'slop' not found, but $0 depends on it."
+	exit 1
+fi
+
 CMD=$1
 CAPTURES=~/Pictures/Screenshots/
 RECORDINGS=~/Videos/Recordings/
@@ -12,6 +20,7 @@ if   [[ $CMD == "record"  ]]; then
 	FILENAME=$(date +"%Y-%m-%d-%H-%M-%S").mkv
 	mkdir -p $RECORDINGS
 	ffmpeg                                       \
+		-hide_banner                             \
 		-video_size "${S_W}x${S_H}"              \
 		-framerate 30                            \
 		-f x11grab                               \
@@ -28,6 +37,7 @@ elif [[ $CMD == "capture" ]]; then
 	FILENAME=$(date +"%Y-%m-%d-%H-%M-%S").png
 	mkdir -p $CAPTURES
 	ffmpeg                                       \
+		-hide_banner                             \
 		-f x11grab                               \
 		-ss $(date -d@$START_DELAY -u +%H:%M:%S) \
 		-video_size "${S_W}x${S_H}"              \
@@ -37,11 +47,15 @@ elif [[ $CMD == "capture" ]]; then
 		$CAPTURES/$FILENAME > /dev/null 2>&1
 	notify-send -i $CAPTURES/$FILENAME "Captured $S_X,$S_Y $S_Wx$S_H $FILENAME"
 else
-	echo "Usage $0 [task]"
+	echo "Usage $0 [task] [options]"
 	echo ""
 	echo "[task]:"
 	echo "   record  - Record The Screen"
 	echo "   capture - Capture The Screen"
+	echo ""
+	echo "[options]:"
+	echo "   --stream      - Stream To Record From (Available: x11 or tty)"
+	echo "   --start-delay - Number of seconds to wait before capturing/recording"
 	exit 1
 fi
 
