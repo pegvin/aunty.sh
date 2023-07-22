@@ -3,24 +3,39 @@
 set -e
 
 CMD=$1
-OUTDIR=~/Pictures/Screenshots
+CAPTURES=~/Pictures/Screenshots/
+RECORDINGS=~/Videos/Recordings/
 START_DELAY=0
 
 if   [[ $CMD == "record"  ]]; then
-	echo command \'$CMD\' is not implemented yet!
+	read -r S_X S_Y S_W S_H <<< $(slop -f "%x %y %w %h")
+	FILENAME=$(date +"%Y-%m-%d-%H-%M-%S").mkv
+	mkdir -p $RECORDINGS
+	ffmpeg                                       \
+		-video_size "${S_W}x${S_H}"              \
+		-framerate 30                            \
+		-f x11grab                               \
+		-i ":0.0+${S_X},${S_Y}"                  \
+		-ss $(date -d@$START_DELAY -u +%H:%M:%S) \
+		-c:v libx264rgb                          \
+		-crf 0                                   \
+		-preset ultrafast                        \
+		-color_range 2                           \
+		$RECORDINGS/$FILENAME > /dev/null 2>&1
+	notify-send -i $CAPTURES/$FILENAME "Recorded $S_X,$S_Y $S_Wx$S_H $FILENAME"
 elif [[ $CMD == "capture" ]]; then
 	read -r S_X S_Y S_W S_H <<< $(slop -f "%x %y %w %h")
 	FILENAME=$(date +"%Y-%m-%d-%H-%M-%S").png
-	mkdir -p $OUTDIR
+	mkdir -p $CAPTURES
 	ffmpeg                                       \
 		-f x11grab                               \
-		-ss $(date -d@$START_DELAY -u +%H:%M:%S) \ # Converts Start Delay In Seconds To HH:MM:SS format
+		-ss $(date -d@$START_DELAY -u +%H:%M:%S) \
 		-video_size "${S_W}x${S_H}"              \
 		-i ":0.0+${S_X},${S_Y}"                  \
 		-frames:v 1                              \
 		-framerate 1                             \
-		$OUTDIR/$FILENAME # > /dev/null 2>&1
-	notify-send -i $OUTDIR/$FILENAME "Captured $S_X,$S_Y $S_Wx$S_H $FILENAME"
+		$CAPTURES/$FILENAME > /dev/null 2>&1
+	notify-send -i $CAPTURES/$FILENAME "Captured $S_X,$S_Y $S_Wx$S_H $FILENAME"
 else
 	echo "Usage $0 [task]"
 	echo ""
