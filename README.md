@@ -1,5 +1,5 @@
 # aunty.sh
-aunty that can capture or record your screen
+aunty that can capture or record your screen just like indian aunties do with your personal life.
 
 this simple script is a wrapper around ffmpeg to capture and record my screen, since i have ffmpeg already installed for other video editing stuff so why not use it for screen capture/recording.
 
