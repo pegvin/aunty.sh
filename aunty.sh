@@ -2,14 +2,23 @@
 
 set -e
 
+VERSION="0.1"
+CMD=$1
+CAPTURES=~/Pictures/
+RECORDINGS=~/Videos/
+START_DELAY=0
+VIDEO_STREAM=x11
+
 function PrintUsage() {
-	echo "Usage $0 [task] [options]"
+	echo "Usage $0 v$VERSION [task] [options]"
 	echo ""
 	echo "[task]:"
 	echo "   record  - Record The Screen"
 	echo "   capture - Capture The Screen"
 	echo ""
 	echo "[options]:"
+	echo "   -v - Print script version"
+	echo "   -h - Show this help message"
 	echo "   -s - Stream to use from x11 or tty (Default: x11)"
 	echo "   -d - Number of seconds to wait before capturing/recording (Default: 0)"
 }
@@ -22,17 +31,13 @@ elif ! command slop --version &> /dev/null; then
 	exit 1
 fi
 
-CMD=$1
-CAPTURES=~/Pictures/
-RECORDINGS=~/Videos/
-START_DELAY=0
-VIDEO_STREAM=x11
-
 ((OPTIND++)) # Since first argument is expected to be a command
-while getopts ":d:s:" arg; do
+while getopts ":d:s:vh" arg; do
 	case $arg in
 		d) START_DELAY="${OPTARG:-0}";;
 		s) VIDEO_STREAM="${OPTARG:-x11}";;
+		v) echo "$0 v$VERSION"; exit 0;;
+		h) PrintUsage; exit 0;;
 		\?) echo "Invalid option: '$OPTARG'"; PrintUsage; exit 1;;
 	esac
 done
@@ -58,8 +63,12 @@ if   [[ $CMD == "record"  ]]; then
 	FILENAME=Recording-$(date +"%Y-%m-%d-%H-%M-%S").mkv
 	mkdir -p $RECORDINGS
 	if [[ $VIDEO_STREAM == "x11" ]]; then
-		read -r S_X S_Y S_W S_H <<< $(slop -f "%x %y %w %h")
+		read -r S_X S_Y S_W S_H <<< $(slop -q -f "%x %y %w %h")
 		FF_FLAGS="-f x11grab -video_size ${S_W}x${S_H} -i :0.0+${S_X},${S_Y}"
+		if [ -z $S_X ] || [ -z $S_Y ] || [ -z $S_W ] || [ -z $S_H ]; then
+			echo "No area selected to record"
+			exit 1;
+		fi
 	else
 		FF_FLAGS="-f fbdev -i /dev/fb0"
 	fi
@@ -79,8 +88,12 @@ elif [[ $CMD == "capture" ]]; then
 	FILENAME=Screenshot-$(date +"%Y-%m-%d-%H-%M-%S").png
 	mkdir -p $CAPTURES
 	if [[ $VIDEO_STREAM == "x11" ]]; then
-		read -r S_X S_Y S_W S_H <<< $(slop -f "%x %y %w %h")
+		read -r S_X S_Y S_W S_H <<< $(slop -q -f "%x %y %w %h")
 		FF_FLAGS="-f x11grab -video_size ${S_W}x${S_H} -i :0.0+${S_X},${S_Y}"
+		if [ -z $S_X ] || [ -z $S_Y ] || [ -z $S_W ] || [ -z $S_H ]; then
+			echo "No area selected to capture"
+			exit 1;
+		fi
 	else
 		FF_FLAGS="-f fbdev -i /dev/fb0"
 	fi
@@ -94,6 +107,10 @@ elif [[ $CMD == "capture" ]]; then
 		-update 1                                \
 		$CAPTURES/$FILENAME
 	echo "Captured $S_X,$S_Y $S_Wx$S_H $FILENAME"
+elif [[ $CMD == "-v" ]]; then
+	echo "$0 v$VERSION";
+elif [[ $CMD == "-h" ]]; then
+	PrintUsage
 else
 	PrintUsage
 	exit 1
