@@ -20,6 +20,8 @@ Usage ./aunty.sh v0.1 [task] [options]
    -d - Number of seconds to wait before capturing/recording (Default: 0)
 ```
 
+**Note**: press <kbd>Ctrl</kbd> + <kbd>C</kbd> to stop the recording.
+
 ---
 ## Dependencies
 
