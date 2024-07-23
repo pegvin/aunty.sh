@@ -11,7 +11,7 @@ VIDEO_STREAM=x11
 COPY_TO_CLIP=false
 
 function PrintUsage() {
-	echo "Usage $0 v$VERSION [task] [options]"
+	echo "Usage: $0 [task] [options]"
 	echo ""
 	echo "[task]:"
 	echo "   record  - Record The Screen"
