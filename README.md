@@ -7,7 +7,7 @@ this simple script is a wrapper around ffmpeg to capture and record my screen, s
 ## Usage
 
 ```plain
-Usage ./aunty.sh v0.1 [task] [options]
+Usage: aunty [task] [options]
 
 [task]:
    record  - Record The Screen
@@ -18,6 +18,7 @@ Usage ./aunty.sh v0.1 [task] [options]
    -h - Show this help message
    -s - Stream to use from x11 or tty (Default: x11)
    -d - Number of seconds to wait before capturing/recording (Default: 0)
+   -c - Copy captured image to clipboard
 ```
 
 **Note**: press <kbd>Ctrl</kbd> + <kbd>C</kbd> to stop the recording.
@@ -27,6 +28,7 @@ Usage ./aunty.sh v0.1 [task] [options]
 
 - [ffmpeg](https://repology.org/project/ffmpeg/) - backend for capturing and recording screen.
 - [slop](https://repology.org/project/slop/) - for specifying the portion of screen you want to capture/record
+- [xclip](https://repology.org/project/xclip/) - to be able to copy to clipboard.
 
 ---
 # Thanks
