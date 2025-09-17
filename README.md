@@ -1,6 +1,7 @@
 # aunty.sh
-This simple script uses `ffmpeg` to capture/record your
-screen. You can either record your X11 session or TTY.
+This simple POSIX-shell compliant script uses `ffmpeg`
+to capture/record your screen. You can either record
+your X11 session or TTY.
 
 ---
 ## Usage
