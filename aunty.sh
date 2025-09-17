@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 set -eu
 
@@ -10,7 +10,7 @@ START_DELAY=0
 VIDEO_STREAM=x11
 COPY_TO_CLIP=false
 
-function PrintUsage() {
+PrintUsage() {
 	echo "Usage: $0 [task] [options]"
 	echo ""
 	echo "[task]:"
@@ -25,20 +25,20 @@ function PrintUsage() {
 	echo "   -c - Copy captured image to clipboard"
 }
 
-if ! command ffmpeg -version &> /dev/null; then
+if ! [ -x "$(command -v ffmpeg)" ]; then
 	echo "error 'ffmpeg' not found, but $0 depends on it."
 	exit 1
-elif ! command slop --version &> /dev/null; then
+elif ! [ -x "$(command -v xclip)" ]; then
 	echo "error 'slop' not found, but $0 depends on it."
 	exit 1
-elif ! command xclip -version &> /dev/null; then
+elif ! [ -x "$(command -v slop)" ]; then
 	echo "error 'xclip' not found, but $0 depends on it."
 	exit 1
 fi
 
-((OPTIND++)) # Since first argument is expected to be a command
+OPTIND=2 # We start with 2nd argument since first is a command
 while getopts ":d:s:cvh" arg; do
-	case $arg in
+	case "$arg" in
 		d) START_DELAY="${OPTARG:-0}";;
 		s) VIDEO_STREAM="${OPTARG:-x11}";;
 		c) COPY_TO_CLIP=true;;
@@ -60,22 +60,24 @@ case "$START_DELAY" in ''|*[!0-9]*)
 	echo "Invalid delay value: '$START_DELAY'"; exit 1 ;;
 esac
 
-if [[ "$VIDEO_STREAM" == "tty" ]] && [ "$EUID" -ne 0 ]; then
+if [ "$VIDEO_STREAM" = "tty" ] && [ "$(id -u)" -ne 0 ]; then
 	echo "Recording tty requires root privelege."
 	exit 1
 fi
 
-if  [[ $CMD == "record"  ]]; then
-	sleep "$START_DELAY"
+if [ "$CMD" = "record" ]; then
+	sleep "${START_DELAY}s"
 	FILENAME=Recording-$(date +"%Y-%m-%d-%H-%M-%S").mkv
 	mkdir -p "$RECORDINGS"
-	if [[ "$VIDEO_STREAM" == "x11" ]]; then
-		read -r S_X S_Y S_W S_H <<< $(slop -q -f "%x %y %w %h")
-		FF_FLAGS="-f x11grab -video_size ${S_W}x${S_H} -i :0.0+${S_X},${S_Y}"
-		if [ -z "$S_X" ] || [ -z "$S_Y" ] || [ -z "$S_W" ] || [ -z "$S_H" ]; then
+	if [ "$VIDEO_STREAM" = "x11" ]; then
+		POS=$(slop -q -f "%x %y %w %h" || echo "")
+		if [ -z "$POS" ]; then
 			echo "No area selected to record"
 			exit 1;
 		fi
+		S_X=$(echo "$POS" | cut -d' ' -f1); S_Y=$(echo "$POS" | cut -d' ' -f2)
+		S_W=$(echo "$POS" | cut -d' ' -f3); S_H=$(echo "$POS" | cut -d' ' -f4)
+		FF_FLAGS="-f x11grab -video_size ${S_W}x${S_H} -i :0.0+${S_X},${S_Y}"
 	else
 		FF_FLAGS="-f fbdev -i /dev/fb0"
 	fi
@@ -91,18 +93,20 @@ if  [[ $CMD == "record"  ]]; then
 		-update 1                                \
 		"$RECORDINGS/$FILENAME"
 		#-f alsa -sample_rate 44100 -i hw:0       \
-	echo "Recorded $S_X,$S_Y $S_Wx$S_H $FILENAME"
-elif [[ $CMD == "capture" ]]; then
-	sleep "$START_DELAY"
+	echo "Recorded $S_X,$S_Y ${S_W}x${S_H} $FILENAME"
+elif [ "$CMD" = "capture" ]; then
+	sleep "${START_DELAY}s"
 	FILENAME=Screenshot-$(date +"%Y-%m-%d-%H-%M-%S").png
 	mkdir -p "$CAPTURES"
-	if [[ "$VIDEO_STREAM" == "x11" ]]; then
-		read -r S_X S_Y S_W S_H <<< $(slop -q -f "%x %y %w %h")
-		FF_FLAGS="-f x11grab -video_size ${S_W}x${S_H} -i :0.0+${S_X},${S_Y}"
-		if [ -z "$S_X" ] || [ -z "$S_Y" ] || [ -z "$S_W" ] || [ -z "$S_H" ]; then
-			echo "No area selected to capture"
+	if [ "$VIDEO_STREAM" = "x11" ]; then
+		POS=$(slop -q -f "%x %y %w %h" || echo "")
+		if [ -z "$POS" ]; then
+			echo "No area selected to record"
 			exit 1;
 		fi
+		S_X=$(echo "$POS" | cut -d' ' -f1); S_Y=$(echo "$POS" | cut -d' ' -f2)
+		S_W=$(echo "$POS" | cut -d' ' -f3); S_H=$(echo "$POS" | cut -d' ' -f4)
+		FF_FLAGS="-f x11grab -video_size ${S_W}x${S_H} -i :0.0+${S_X},${S_Y}"
 	else
 		FF_FLAGS="-f fbdev -i /dev/fb0"
 	fi
@@ -115,16 +119,16 @@ elif [[ $CMD == "capture" ]]; then
 		-framerate 1                             \
 		-update 1                                \
 		"$CAPTURES/$FILENAME"
-	if [[ "$COPY_TO_CLIP" == "true" ]]; then
+	if [ "$COPY_TO_CLIP" = "true" ]; then
 		xclip -selection clipboard -t image/png -i "$CAPTURES/$FILENAME"
-		echo "Captured $S_X,$S_Y $S_Wx$S_H & copied to clipboard"
+		echo "Captured $S_X,$S_Y ${S_W}x${S_H} & copied to clipboard"
 		rm "$CAPTURES/$FILENAME"
 	else
-		echo "Captured $S_X,$S_Y $S_Wx$S_H $FILENAME"
+		echo "Captured $S_X,$S_Y ${S_W}x${S_H} $FILENAME"
 	fi
-elif [[ $CMD == "-v" ]]; then
+elif [ "$CMD" = "-v" ]; then
 	echo "$0 v$VERSION";
-elif [[ $CMD == "-h" ]]; then
+elif [ "$CMD" = "-h" ]; then
 	PrintUsage
 else
 	PrintUsage
