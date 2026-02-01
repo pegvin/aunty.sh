@@ -4,8 +4,8 @@ set -eu
 
 VERSION="0.1"
 CMD=${1:-}
-CAPTURES=~/Pictures/
-RECORDINGS=~/Videos/
+CAPTURES=$HOME/Pictures
+RECORDINGS=$HOME/Videos
 START_DELAY=0
 VIDEO_STREAM=x11
 COPY_TO_CLIP=false
@@ -28,10 +28,10 @@ PrintUsage() {
 if ! [ -x "$(command -v ffmpeg)" ]; then
 	echo "error 'ffmpeg' not found, but $0 depends on it."
 	exit 1
-elif ! [ -x "$(command -v xclip)" ]; then
+elif ! [ -x "$(command -v slop)" ]; then
 	echo "error 'slop' not found, but $0 depends on it."
 	exit 1
-elif ! [ -x "$(command -v slop)" ]; then
+elif ! [ -x "$(command -v xclip)" ]; then
 	echo "error 'xclip' not found, but $0 depends on it."
 	exit 1
 fi
@@ -77,7 +77,7 @@ if [ "$CMD" = "record" ]; then
 		fi
 		S_X=$(echo "$POS" | cut -d' ' -f1); S_Y=$(echo "$POS" | cut -d' ' -f2)
 		S_W=$(echo "$POS" | cut -d' ' -f3); S_H=$(echo "$POS" | cut -d' ' -f4)
-		FF_FLAGS="-f x11grab -video_size ${S_W}x${S_H} -i :0.0+${S_X},${S_Y}"
+		FF_FLAGS="-f x11grab -video_size ${S_W}x${S_H} -i $DISPLAY+${S_X},${S_Y}"
 	else
 		FF_FLAGS="-f fbdev -i /dev/fb0"
 	fi
@@ -106,7 +106,7 @@ elif [ "$CMD" = "capture" ]; then
 		fi
 		S_X=$(echo "$POS" | cut -d' ' -f1); S_Y=$(echo "$POS" | cut -d' ' -f2)
 		S_W=$(echo "$POS" | cut -d' ' -f3); S_H=$(echo "$POS" | cut -d' ' -f4)
-		FF_FLAGS="-f x11grab -video_size ${S_W}x${S_H} -i :0.0+${S_X},${S_Y}"
+		FF_FLAGS="-f x11grab -video_size ${S_W}x${S_H} -i $DISPLAY+${S_X},${S_Y}"
 	else
 		FF_FLAGS="-f fbdev -i /dev/fb0"
 	fi
